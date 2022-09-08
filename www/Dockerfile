@@ -1,0 +1,12 @@
+FROM golang:1-alpine
+
+WORKDIR /usr/src/app
+COPY go.mod go.sum ./
+RUN go mod download && go mod verify
+COPY main.go ./
+RUN go build -v -o /usr/local/bin/app ./...
+
+FROM alpine:3
+WORKDIR /usr/src/app
+COPY --from=0 /usr/local/bin/app /usr/local/bin/app
+CMD ["app"]
