@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sifio-smtp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sifio-smtp
+  template:
+    metadata:
+      labels:
+        app: sifio-smtp
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      containers:
+      - name: sifio-smtp
+        image: sifiocr.azurecr.io/sifio-smtp:GITHUB.SHA
+        ports:
+           - containerPort: 1025
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sifio-smtp
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 25
+    targetPort: 1025
+  selector:
+    app: sifio-smtp
