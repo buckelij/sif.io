@@ -38,5 +38,9 @@ spec:
   ports:
   - port: 25
     targetPort: 1025
+    name: smtp
+  - port: 2025
+    targetPort: 1025
+    name: smtp2
   selector:
     app: sifio-smtp
