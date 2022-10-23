@@ -24,6 +24,15 @@
 # For more information on GitHub Actions for Azure, refer to https://github.com/Azure/Actions
 # For more samples to get started with GitHub Action workflows to deploy to Azure, refer to https://github.com/Azure/actions-workflow-samples
 # For more options with the actions used below please refer to https://github.com/Azure/login
+#
+#
+# az aks create \
+#     --resource-group sif_group \
+#     --name sifio \
+#     --location westus3 \
+#     --node-count 1 \
+#     --node-vm-size "Standard_B2s" \
+#     --load-balancer-sku basic
 
 name: Build and deploy sif.io to AKS
 
