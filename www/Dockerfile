@@ -1,6 +1,7 @@
 FROM golang:1-alpine
 
 WORKDIR /usr/src/app
+ENV CGO_ENABLED=0
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 COPY main.go main_test.go ./
