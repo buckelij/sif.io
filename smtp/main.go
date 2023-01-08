@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"io"
 	"log"
+	"os"
 	"strings"
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 	smtp "github.com/emersion/go-smtp"
 )
 
@@ -75,6 +79,26 @@ Hey <3
 .
 */
 func main() {
+	blobAccount := os.Getenv("BLOB_ACCOUNT")
+	blobContainer := os.Getenv("BLOB_CONTAINER")
+	blobKey := os.Getenv("BLOB_KEY")
+	cred, err := azblob.NewSharedKeyCredential(blobAccount, blobKey)
+	if err != nil {
+		panic("blob storage credential error")
+	}
+	blobClient, err := azblob.NewClientWithSharedKeyCredential(fmt.Sprintf("https://%s.blob.core.windows.net/", blobAccount), cred, nil)
+	if err != nil {
+		panic("blob client error")
+	}
+	_, err = blobClient.UploadStream(context.TODO(),
+		blobContainer,
+		"ping",
+		strings.NewReader("pong"),
+		&azblob.UploadStreamOptions{})
+	if err != nil {
+		log.Println("failed to upload")
+	}
+
 	be := &Backend{}
 
 	s := smtp.NewServer(be)
