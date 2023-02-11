@@ -144,6 +144,19 @@ jobs:
     - name: Update manifest with image tag
       run: sed -i'' 's/GITHUB.SHA/${{ github.sha }}/' ${{ env.DEPLOYMENT_MANIFEST_PATH }}
 
+    # Modifies manifest to set INJECTED values from GitHub secrets
+    - name: Set ENV blob account
+      run: sed -i'' 's/INJECTED_BLOB_ACCOUNT/${{ secrets.INJECTED_BLOB_ACCOUNT }}/' ${{ env.DEPLOYMENT_MANIFEST_PATH }}
+
+    - name: Set ENV blob container
+      run: sed -i'' 's/INJECTED_BLOB_CONTAINER/${{ secrets.INJECTED_BLOB_CONTAINER }}/' ${{ env.DEPLOYMENT_MANIFEST_PATH }}
+
+    - name: Set ENV blob key
+      run: sed -i'' 's/INJECTED_BLOB_KEY/${{ secrets.INJECTED_BLOB_KEY }}/' ${{ env.DEPLOYMENT_MANIFEST_PATH }}
+
+    - name: Set ENV mx domains
+      run: sed -i'' 's/INJECTED_MX_DOMAINS/${{ secrets.INJECTED_MX_DOMAIN }}/' ${{ env.DEPLOYMENT_MANIFEST_PATH }}
+
     # Deploys application based on given manifest file
     - name: Deploys application
       uses: Azure/k8s-deploy@v3.1

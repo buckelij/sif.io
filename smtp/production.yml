@@ -17,6 +17,15 @@ spec:
       containers:
       - name: sifio-smtp
         image: sifiocr.azurecr.io/sifio-smtp:GITHUB.SHA
+        env:
+        - name: BLOB_ACCOUNT
+          value: INJECTED_BLOB_ACCOUNT
+        - name: BLOB_CONTAINER
+          value: INJECTED_BLOB_CONTAINER
+        - name: BLOB_KEY
+          value: INJECTED_BLOB_KEY
+        - name: MX_DOMAINS
+          value: INJECTED_MX_DOMAINS
         ports:
            - containerPort: 1025
         resources:
