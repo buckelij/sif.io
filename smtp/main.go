@@ -45,13 +45,13 @@ func newServer() *smtp.Server {
 }
 
 func main() {
-	blobClient, err := NewAzureBlobClient(config.blobAccount, config.blobContainer, config.blobKey)
+	blobClient, err := NewAzureBlobClient(os.Getenv("BLOB_ACCOUNT"), os.Getenv("BLOB_CONTAINER"), os.Getenv("BLOB_KEY"))
 	if err != nil {
 		panic("failed to create blob client")
 	}
 	err = blobClient.Put("ping", []byte("pong"))
 	if err != nil {
-		log.Println("failed to upload ping")
+		log.Println("failed to upload ping", err)
 	}
 
 	config = configuration{
