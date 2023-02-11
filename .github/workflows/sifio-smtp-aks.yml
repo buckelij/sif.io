@@ -155,7 +155,7 @@ jobs:
       run: sed -i'' 's/INJECTED_BLOB_KEY/${{ secrets.INJECTED_BLOB_KEY }}/' ${{ env.DEPLOYMENT_MANIFEST_PATH }}
 
     - name: Set ENV mx domains
-      run: sed -i'' 's/INJECTED_MX_DOMAINS/${{ secrets.INJECTED_MX_DOMAIN }}/' ${{ env.DEPLOYMENT_MANIFEST_PATH }}
+      run: sed -i'' 's/INJECTED_MX_DOMAINS/${{ secrets.INJECTED_MX_DOMAINS }}/' ${{ env.DEPLOYMENT_MANIFEST_PATH }}
 
     # Deploys application based on given manifest file
     - name: Deploys application
