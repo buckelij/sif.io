@@ -56,7 +56,7 @@ func (s *Session) Logout() error {
 		for _, domain := range strings.Split(config.mxDomains, ",") {
 			if strings.HasSuffix(m.Recipient, domain) {
 				log.Printf("FROM: %v TO: %v MESSSAGE: %v\n", m.From, m.Recipient, string(m.Data))
-				go config.blobClient.Put(url.QueryEscape(domain)+"/"+url.QueryEscape(time.Now().String()), m.Data)
+				go config.blobClient.Put("mail/"+url.QueryEscape(domain)+"/"+url.QueryEscape(time.Now().String()), m.Data)
 			}
 		}
 	}

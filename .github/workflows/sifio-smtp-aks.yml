@@ -157,6 +157,9 @@ jobs:
     - name: Set ENV mx domains
       run: sed -i'' 's/INJECTED_MX_DOMAINS/${{ secrets.INJECTED_MX_DOMAINS }}/' ${{ env.DEPLOYMENT_MANIFEST_PATH }}
 
+    - name: Set ENV xsrf secret
+      run: sed -i'' 's/INJECTED_XSRF_SECRET/${{ secrets.INJECTED_XSRF_SECRET }}/' ${{ env.DEPLOYMENT_MANIFEST_PATH }}
+
     # Deploys application based on given manifest file
     - name: Deploys application
       uses: Azure/k8s-deploy@v3.1

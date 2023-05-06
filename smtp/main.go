@@ -1,11 +1,18 @@
+// mail receiver and web interface
+// mail is stored in blob storage under the `mail/` prefix
+// webmail is authenticated against blob storage hashes under `bcrypt/<username>` keys
+// credentials can be generated with e.g. `go run . genpass passw0rd`
+
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"time"
 
 	smtp "github.com/emersion/go-smtp"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type configuration struct {
@@ -45,6 +52,12 @@ func newServer() *smtp.Server {
 }
 
 func main() {
+	if os.Args[1] == "genpass" {
+		v, _ := bcrypt.GenerateFromPassword([]byte(os.Args[2]), bcrypt.DefaultCost)
+		fmt.Println(string(v))
+		return
+	}
+
 	blobClient, err := NewAzureBlobClient(os.Getenv("BLOB_ACCOUNT"), os.Getenv("BLOB_CONTAINER"), os.Getenv("BLOB_KEY"))
 	if err != nil {
 		panic("failed to create blob client")
@@ -65,6 +78,14 @@ func main() {
 	}
 	s := newServer()
 	log.Println("Starting server at", s.Addr)
+
+	xsrfSecret := os.Getenv("XSRF_SECRET")
+	if xsrfSecret == "" {
+		log.Fatal("XSRF_SECRET not set")
+	}
+	webmailservice := Webmail{XsrfSecret: xsrfSecret, BlobClient: blobClient}
+	go webmailservice.ListenAndServeWebmail()
+
 	if err := s.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
