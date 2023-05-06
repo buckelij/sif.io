@@ -52,7 +52,7 @@ func newServer() *smtp.Server {
 }
 
 func main() {
-	if os.Args[1] == "genpass" {
+	if len(os.Args) > 2 && os.Args[1] == "genpass" {
 		v, _ := bcrypt.GenerateFromPassword([]byte(os.Args[2]), bcrypt.DefaultCost)
 		fmt.Println(string(v))
 		return
