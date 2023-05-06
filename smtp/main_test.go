@@ -12,6 +12,7 @@ import (
 type TestBlobClient struct {
 	wg       sync.WaitGroup // create a wait group, this will allow you to block later
 	uploaded []string
+	gets     [][]byte // stub values to be returned
 }
 
 func (c *TestBlobClient) Put(oid string, data []byte) error {
@@ -21,7 +22,9 @@ func (c *TestBlobClient) Put(oid string, data []byte) error {
 }
 
 func (c *TestBlobClient) Get(oid string) ([]byte, error) {
-	return []byte(""), nil
+	v := c.gets[0]
+	c.gets = c.gets[1:]
+	return v, nil
 }
 
 func (c *TestBlobClient) List(prefix string) ([]string, error) {
@@ -64,7 +67,7 @@ func TestStoresMail(t *testing.T) {
 		t.Error("mail did not store")
 	}
 
-	if !strings.HasPrefix(testBlobClient.uploaded[0], "sif.io") {
+	if !strings.HasPrefix(testBlobClient.uploaded[0], "mail/sif.io") {
 		t.Error("mail did not store with expected blob prefix")
 	}
 }

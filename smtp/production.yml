@@ -26,8 +26,11 @@ spec:
           value: INJECTED_BLOB_KEY
         - name: MX_DOMAINS
           value: INJECTED_MX_DOMAINS
+        - name: XSRF_SECRET
+          value: INJECTED_XSRF_SECRET
         ports:
            - containerPort: 1025
+           - containerPort: 8000
         resources:
           requests:
             cpu: 100m
@@ -51,5 +54,8 @@ spec:
   - port: 2025
     targetPort: 1025
     name: smtp2
+  - port: 8000
+    targetPort: 8000
+    name: webmail
   selector:
     app: sifio-smtp
