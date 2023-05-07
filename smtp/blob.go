@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log"
@@ -41,8 +42,18 @@ func (c *azureBlobClient) Put(oid string, data []byte) error {
 }
 
 func (c *azureBlobClient) Get(oid string) ([]byte, error) {
-	log.Print(oid)
-	return []byte{}, nil
+	s, err := c.client.DownloadStream(context.TODO(), c.container, oid, &azblob.DownloadStreamOptions{})
+	if err != nil {
+		return []byte{}, err
+	}
+	b := bytes.Buffer{}
+	retryReader := s.NewRetryReader(context.TODO(), &azblob.RetryReaderOptions{})
+	_, err = b.ReadFrom(retryReader)
+	if err != nil {
+		return []byte{}, err
+	}
+	defer retryReader.Close()
+	return b.Bytes(), err
 }
 
 func (c *azureBlobClient) List(prefix string) ([]string, error) {
