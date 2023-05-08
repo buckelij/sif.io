@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"net/url"
 
 	"golang.org/x/crypto/acme/autocert"
@@ -22,10 +23,17 @@ type SSLblobCache struct {
 var _ autocert.Cache = SSLblobCache{}
 
 func (s SSLblobCache) Get(ctx context.Context, key string) ([]byte, error) {
-	return s.BlobClient.Get("certs/" + url.QueryEscape(key))
+
+	d, err := s.BlobClient.Get("certs/" + url.QueryEscape(key))
+	if err != nil {
+		return []byte{}, autocert.ErrCacheMiss
+	}
+
+	return d, err
 }
 
 func (s SSLblobCache) Put(ctx context.Context, key string, data []byte) error {
+	log.Println("saving certificate")
 	return s.BlobClient.Put("certs/"+url.QueryEscape(key), data)
 }
 
