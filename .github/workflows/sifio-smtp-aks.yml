@@ -34,7 +34,7 @@
 #     --node-vm-size "Standard_B2s" \
 #     --load-balancer-sku basic
 
-name: Build and deploy sif.io to AKS
+name: Build and deploy smtp.sif.io to AKS
 
 on:
   push:

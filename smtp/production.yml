@@ -30,7 +30,7 @@ spec:
           value: INJECTED_XSRF_SECRET
         ports:
            - containerPort: 1025
-           - containerPort: 8000
+           - containerPort: 8443
         resources:
           requests:
             cpu: 100m
@@ -54,8 +54,8 @@ spec:
   - port: 2025
     targetPort: 1025
     name: smtp2
-  - port: 8000
-    targetPort: 8000
+  - port: 443
+    targetPort: 8443
     name: webmail
   selector:
     app: sifio-smtp

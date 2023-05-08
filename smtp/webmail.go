@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/net/xsrftoken"
@@ -23,8 +24,17 @@ func (wm *Webmail) ListenAndServeWebmail() {
 		wm.page(wm.indexTmpl())(w, req)
 	})
 	http.HandleFunc("/login", wm.loginFormHandler)
-	log.Println("Starting webmail server at", "0.0.0.0:8000")
-	log.Fatal(http.ListenAndServe("0.0.0.0:8000", nil))
+
+	log.Println("Starting webmail server at", "0.0.0.0:8443")
+	if os.Getenv("NO_TLS") == "" {
+		s := &http.Server{
+			Addr:      "0.0.0.0:8443",
+			TLSConfig: NewSSLmanager(wm.BlobClient).TLSConfig(),
+		}
+		log.Fatal(s.ListenAndServeTLS("", ""))
+	} else {
+		log.Fatal(http.ListenAndServe("0.0.0.0:8443", nil))
+	}
 }
 
 // checks session, sets cors xsrf and other headers, renders page

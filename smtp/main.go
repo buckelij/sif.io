@@ -2,6 +2,7 @@
 // mail is stored in blob storage under the `mail/` prefix
 // webmail is authenticated against blob storage hashes under `bcrypt/<username>` keys
 // credentials can be generated with e.g. `go run . genpass passw0rd`
+// set ENV NO_TLS to disable SSL
 
 package main
 
