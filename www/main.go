@@ -16,6 +16,7 @@ func main() {
 func index(i string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
 		if req.URL.Path != "/" {
+			log.Printf("path=%q ip=%q status=404", req.URL.Path, req.RemoteAddr)
 			http.NotFound(w, req)
 			return
 		}
@@ -25,7 +26,7 @@ func index(i string) func(http.ResponseWriter, *http.Request) {
 
 func page(page string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
-		log.Printf("path=%q ip=%q", req.URL.Path, req.RemoteAddr)
+		log.Printf("path=%q ip=%q status=200", req.URL.Path, req.RemoteAddr)
 		fmt.Fprint(w, page)
 	}
 }
