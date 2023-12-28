@@ -13,11 +13,7 @@ import (
 // The Backend implements SMTP server methods
 type Backend struct{}
 
-func (bkd *Backend) Login(_ *smtp.ConnectionState, _ string, _ string) (smtp.Session, error) {
-	return &Session{}, smtp.ErrAuthUnsupported
-}
-
-func (bkd *Backend) AnonymousLogin(_ *smtp.ConnectionState) (smtp.Session, error) {
+func (bkd *Backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
 	return &Session{}, nil
 }
 
@@ -26,12 +22,16 @@ type Session struct {
 	Messages []Message
 }
 
-func (s *Session) Mail(from string, opts smtp.MailOptions) error {
+func (s *Session) AuthPlain(_, _ string) error {
+	return smtp.ErrAuthUnsupported
+}
+
+func (s *Session) Mail(from string, _ *smtp.MailOptions) error {
 	s.Messages = append(s.Messages, Message{From: from})
 	return nil
 }
 
-func (s *Session) Rcpt(to string) error {
+func (s *Session) Rcpt(to string, _ *smtp.RcptOptions) error {
 	msg := s.Messages[len(s.Messages)-1]
 	msg.Recipient = to
 	s.Messages[len(s.Messages)-1] = msg
