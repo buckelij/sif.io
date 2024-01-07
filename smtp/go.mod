@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v0.6.1
-	github.com/emersion/go-smtp v0.20.0
+	github.com/emersion/go-smtp v0.20.1
 	golang.org/x/crypto v0.17.0
 	golang.org/x/net v0.17.0
 )
