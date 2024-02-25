@@ -27,7 +27,7 @@ func (c *TestBlobClient) Get(oid string) ([]byte, error) {
 	return v, nil
 }
 
-func (c *TestBlobClient) List(prefix string) ([]string, error) {
+func (c *TestBlobClient) ListMail() ([]string, error) {
 	return []string{}, nil
 }
 

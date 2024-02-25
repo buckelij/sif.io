@@ -56,7 +56,7 @@ func (wm *Webmail) page(content string) func(http.ResponseWriter, *http.Request)
 		mails := []string{}
 		if validSession {
 			var err error
-			mails, err = wm.BlobClient.List("")
+			mails, err = wm.BlobClient.ListMail()
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
@@ -162,7 +162,7 @@ func (wm *Webmail) indexTmpl() string {
 			{{if .LoggedIn}}
 				<ul>
 				{{ range .Mails}}
-					<li><a href="/mail/{{.}}">{{.}}>/a></li>
+					<li><a href="/mail/{{.}}">{{.}}></a></li>
 				{{ end }}
 				</ul>
 			{{else}}

@@ -12,7 +12,7 @@ import (
 type BlobClient interface {
 	Put(string, []byte) error
 	Get(string) ([]byte, error)
-	List(string) ([]string, error)
+	ListMail() ([]string, error)
 }
 
 type azureBlobClient struct {
@@ -56,9 +56,10 @@ func (c *azureBlobClient) Get(oid string) ([]byte, error) {
 	return b.Bytes(), err
 }
 
-// Lists all blobs, which won't be too many right :|
-func (c *azureBlobClient) List(prefix string) ([]string, error) {
-	lister := c.client.NewListBlobsFlatPager(c.container, nil)
+// Lists all mail blobs, which won't be too many right :|
+func (c *azureBlobClient) ListMail() ([]string, error) {
+	prefix := "mail/"
+	lister := c.client.NewListBlobsFlatPager(c.container, &azblob.ListBlobsFlatOptions{Prefix: &prefix})
 	blobs := make([]string, 1)
 	for lister.More() {
 		page, err := lister.NextPage(context.TODO())
