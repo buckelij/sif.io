@@ -21,9 +21,19 @@ func (wm *Webmail) ListenAndServeWebmail() {
 			http.NotFound(w, req)
 			return
 		}
-		wm.page(wm.indexTmpl())(w, req)
+		mails := []string{}
+		if wm.validSession(req) {
+			var err error
+			mails, err = wm.BlobClient.ListMail()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		}
+		wm.page(wm.indexTmpl(), struct{ Mails []string }{Mails: mails})(w, req)
 	})
 	http.HandleFunc("/login", wm.loginFormHandler)
+	http.HandleFunc("/mail", wm.showMailHandler)
 
 	log.Println("Starting webmail server at", "0.0.0.0:8443")
 	if os.Getenv("NO_TLS") == "" {
@@ -38,7 +48,7 @@ func (wm *Webmail) ListenAndServeWebmail() {
 }
 
 // checks session, sets cors xsrf and other headers, renders page
-func (wm *Webmail) page(content string) func(http.ResponseWriter, *http.Request) {
+func (wm *Webmail) page(content string, data any) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
 		wm.setSecurityHeaders(w)
 		formToken := xsrftoken.Generate(wm.XsrfSecret, "", "")
@@ -52,24 +62,13 @@ func (wm *Webmail) page(content string) func(http.ResponseWriter, *http.Request)
 			SameSite: http.SameSiteStrictMode,
 		})
 
-		validSession := wm.validSession(req)
-		mails := []string{}
-		if validSession {
-			var err error
-			mails, err = wm.BlobClient.ListMail()
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-		}
-
 		pageTmpl := template.Must(template.New("rendered").Parse(wm.header() + content + wm.footer()))
 		err := pageTmpl.Execute(w, struct {
 			XsrfToken  string
 			StyleNonce string
 			LoggedIn   bool
-			Mails      []string
-		}{formToken, formToken, validSession, mails})
+			Data       any
+		}{formToken, formToken, wm.validSession(req), data})
 		if err != nil {
 			log.Printf("failed render: %v", err)
 		}
@@ -114,6 +113,19 @@ func (wm *Webmail) loginFormHandler(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, "/", http.StatusForbidden)
 		return
 	}
+}
+
+// Shows a mail
+func (wm *Webmail) showMailHandler(w http.ResponseWriter, req *http.Request) {
+	if !wm.validSession(req) {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+	b, err := wm.BlobClient.Get(req.URL.EscapedPath())
+	if err != nil {
+		log.Printf("showMailHandler %v: %v", req.URL.EscapedPath(), err)
+	}
+	wm.page(wm.showMailTmpl(), struct{ Body string }{Body: string(b)})(w, req)
 }
 
 func (wm *Webmail) setSecurityHeaders(w http.ResponseWriter) {
@@ -161,7 +173,7 @@ func (wm *Webmail) indexTmpl() string {
 		<header><h2>Webmail</h2></header>
 			{{if .LoggedIn}}
 				<ul>
-				{{ range .Mails}}
+				{{ range .Data.Mails}}
 					<li><a href="/mail/{{.}}">{{.}}></a></li>
 				{{ end }}
 				</ul>
@@ -177,6 +189,10 @@ func (wm *Webmail) indexTmpl() string {
 			{{end}}
 		</div>
 	</div>`
+}
+
+func (wm *Webmail) showMailTmpl() string {
+	return `<div>{{.Body}}</div>`
 }
 
 func (wm *Webmail) header() string {
