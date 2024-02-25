@@ -54,6 +54,9 @@ func (s *Session) Reset() {}
 func (s *Session) Logout() error {
 	for _, m := range s.Messages {
 		for _, domain := range strings.Split(config.mxDomains, ",") {
+			if len(m.Data) == 0 {
+				return nil
+			}
 			if strings.HasSuffix(m.Recipient, domain) {
 				log.Printf("FROM: %v TO: %v MESSSAGE: %v\n", m.From, m.Recipient, string(m.Data))
 				go config.blobClient.Put("mail/"+url.QueryEscape(domain)+"/"+url.QueryEscape(time.Now().String()), m.Data)
