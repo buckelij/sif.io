@@ -99,7 +99,7 @@ var resume_html = `<!DOCTYPE HTML>
 		<br>
 		<b>Professional Experience</b>
 		<ul>
-			<li>Staff Software Engineer, Digital Customer Success, GitHub, 2021-Present</li>
+			<li>Staff Software Engineer, Customer Success Engineering, GitHub, 2021-Present</li>
 			<li>Software Engineer, Support Operations, GitHub, 2018-2021</li>
 			<li>Enterprise Support Engineer, GitHub, 2014-2018</li>
 			<li>Systems Administrator, The Jockey Club Technology Services, 2011-2014</li>
@@ -110,15 +110,10 @@ var resume_html = `<!DOCTYPE HTML>
 			<li>Bachelor of Arts in Computer Science with Honors, Grinnell College, Grinnell IA</li>
 			<li>Concentration in Neuroscience, Grinnell College, Grinnell IA</li>
 		</ul>
-		<b>Certifications</b>
-		<ul>
-			<li>Red Hat Certified Engineer: RHCSA, RHCE 111-064-291</li>
-		</ul>
 		<b>Skills</b>
 		<ul>
-			<li>Operating Systems: Linux, Windows, OS X, OpenBSD</li>
-			<li>Software: Nginx, MySQL, Kubernetes, ¯(ツ)/¯ all sorts of stuff</li>
 			<li>Languages: Ruby, JavaScript, Go, Bash</li>
+			<li>Systems: AWS, Azure, HAProxy, Kubernetes, Linux, MySQL , Terraform, etc :)</li>
 		</ul>
 	</body>
 	</html>`
