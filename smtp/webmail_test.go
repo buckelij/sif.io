@@ -33,9 +33,9 @@ func TestSetSecurityHeaders(t *testing.T) {
 	wm := Webmail{XsrfSecret: "123", BlobClient: testBlobClient}
 
 	rr := httptest.NewRecorder()
-	wm.setSecurityHeaders(rr)
-	if rr.Result().Header["Content-Security-Policy"][0] != "default-src 'none'; style-src 'self'; form-action: 'self'" {
-		t.Fatal("incorrect CSP")
+	styleNonce := wm.setSecurityHeaders(rr)
+	if rr.Result().Header["Content-Security-Policy"][0] != "default-src 'none'; style-src 'nonce-'"+styleNonce+"; form-action 'self'" {
+		t.Fatal("incorrect CSP" + rr.Result().Header["Content-Security-Policy"][0])
 	}
 }
 

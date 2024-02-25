@@ -51,7 +51,7 @@ func (wm *Webmail) ListenAndServeWebmail() {
 // checks session, sets cors xsrf and other headers, renders page
 func (wm *Webmail) page(content string, data any) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
-		wm.setSecurityHeaders(w)
+		styleNonce := wm.setSecurityHeaders(w)
 		formToken := xsrftoken.Generate(wm.XsrfSecret, "", "")
 		http.SetCookie(w, &http.Cookie{
 			Name:     "xsrftoken",
@@ -69,7 +69,7 @@ func (wm *Webmail) page(content string, data any) func(http.ResponseWriter, *htt
 			StyleNonce string
 			LoggedIn   bool
 			Data       any
-		}{formToken, formToken, wm.validSession(req), data})
+		}{formToken, styleNonce, wm.validSession(req), data})
 		if err != nil {
 			log.Printf("failed render: %v", err)
 		}
@@ -129,12 +129,14 @@ func (wm *Webmail) showMailHandler(w http.ResponseWriter, req *http.Request) {
 	wm.page(wm.showMailTmpl(), struct{ Body string }{Body: string(b)})(w, req)
 }
 
-func (wm *Webmail) setSecurityHeaders(w http.ResponseWriter) {
+func (wm *Webmail) setSecurityHeaders(w http.ResponseWriter) (styleNonce string) {
+	styleNonce = xsrftoken.Generate(wm.XsrfSecret, "", "")
 	w.Header().Set("X-Frame-Options", "DENY")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("X-Permitted-Cross-Domain-Policies", "none")
 	w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
-	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'self'; form-action: 'self'")
+	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'nonce-'"+styleNonce+"; form-action 'self'")
+	return styleNonce
 }
 
 func (wm *Webmail) validSession(req *http.Request) bool {
