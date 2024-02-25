@@ -52,12 +52,24 @@ func (wm *Webmail) page(content string) func(http.ResponseWriter, *http.Request)
 			SameSite: http.SameSiteStrictMode,
 		})
 
+		validSession := wm.validSession(req)
+		mails := []string{}
+		if validSession {
+			var err error
+			mails, err = wm.BlobClient.List("")
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		}
+
 		pageTmpl := template.Must(template.New("rendered").Parse(wm.header() + content + wm.footer()))
 		err := pageTmpl.Execute(w, struct {
 			XsrfToken  string
 			StyleNonce string
 			LoggedIn   bool
-		}{formToken, formToken, wm.validSession(req)})
+			Mails      []string
+		}{formToken, formToken, validSession, mails})
 		if err != nil {
 			log.Printf("failed render: %v", err)
 		}
@@ -148,14 +160,11 @@ func (wm *Webmail) indexTmpl() string {
 		<div class="flex-container">
 		<header><h2>Webmail</h2></header>
 			{{if .LoggedIn}}
-				<div>
-				<article class="article">
-					mail 1
-				</article>
-				<article class="article">
-					mail 2
-				</article>
-				</div>
+				<ul>
+				{{ range .Mails}}
+					<li><a href="/mail/{{.}}">{{.}}>/a></li>
+				{{ end }}
+				</ul>
 			{{else}}
 				<form method="POST" action="/login">
 					<label>User:</label><br />

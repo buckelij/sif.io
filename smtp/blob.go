@@ -56,7 +56,19 @@ func (c *azureBlobClient) Get(oid string) ([]byte, error) {
 	return b.Bytes(), err
 }
 
+// Lists all blobs, which won't be too many right :|
 func (c *azureBlobClient) List(prefix string) ([]string, error) {
-	log.Print(prefix)
-	return []string{}, nil
+	lister := c.client.NewListBlobsFlatPager(c.container, nil)
+	blobs := make([]string, 1)
+	for lister.More() {
+		page, err := lister.NextPage(context.TODO())
+		if err != nil {
+			fmt.Printf("azureBlobClient List: %v", err)
+			return []string{}, err
+		}
+		for _, blob := range page.Segment.BlobItems {
+			blobs = append(blobs, *blob.Name)
+		}
+	}
+	return blobs, nil
 }
