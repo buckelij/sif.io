@@ -177,7 +177,7 @@ func (wm *Webmail) indexTmpl() string {
 			{{if .LoggedIn}}
 				<ul>
 				{{ range .Data.Mails}}
-					<li><a href="/mail/{{.}}">{{.}}></a></li>
+					<li><a href="/mail/{{.}}">{{.}}</a></li>
 				{{ end }}
 				</ul>
 			{{else}}
