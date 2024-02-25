@@ -135,7 +135,7 @@ func (wm *Webmail) setSecurityHeaders(w http.ResponseWriter) (styleNonce string)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("X-Permitted-Cross-Domain-Policies", "none")
 	w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
-	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'nonce-'"+styleNonce+"; form-action 'self'")
+	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'nonce-"+styleNonce+"'; form-action 'self'")
 	return styleNonce
 }
 

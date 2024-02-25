@@ -34,7 +34,7 @@ func TestSetSecurityHeaders(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 	styleNonce := wm.setSecurityHeaders(rr)
-	if rr.Result().Header["Content-Security-Policy"][0] != "default-src 'none'; style-src 'nonce-'"+styleNonce+"; form-action 'self'" {
+	if rr.Result().Header["Content-Security-Policy"][0] != "default-src 'none'; style-src 'nonce-"+styleNonce+"'; form-action 'self'" {
 		t.Fatal("incorrect CSP" + rr.Result().Header["Content-Security-Policy"][0])
 	}
 }
