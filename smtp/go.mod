@@ -1,6 +1,6 @@
 module github.com/buckelij/sif.io/smtp
 
-go 1.19
+go 1.22.0
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v0.6.1

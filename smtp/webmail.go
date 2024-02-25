@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/net/xsrftoken"
@@ -117,12 +118,11 @@ func (wm *Webmail) loginFormHandler(w http.ResponseWriter, req *http.Request) {
 
 // Shows a mail
 func (wm *Webmail) showMailHandler(w http.ResponseWriter, req *http.Request) {
-	log.Printf("showmail: %v", req.URL.EscapedPath())
 	if !wm.validSession(req) {
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
-	b, err := wm.BlobClient.Get(req.URL.EscapedPath())
+	b, err := wm.BlobClient.Get(strings.TrimPrefix(req.URL.EscapedPath(), "/mail/"))
 	if err != nil {
 		log.Printf("showMailHandler %v: %v", req.URL.EscapedPath(), err)
 	}
@@ -193,7 +193,7 @@ func (wm *Webmail) indexTmpl() string {
 }
 
 func (wm *Webmail) showMailTmpl() string {
-	return `<div>{{.Body}}</div>`
+	return `<div>{{.Data.Body}}</div>`
 }
 
 func (wm *Webmail) header() string {
