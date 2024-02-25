@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"html/template"
 	"log"
 	"net/http"
@@ -130,7 +131,7 @@ func (wm *Webmail) showMailHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func (wm *Webmail) setSecurityHeaders(w http.ResponseWriter) (styleNonce string) {
-	styleNonce = xsrftoken.Generate(wm.XsrfSecret, "", "")
+	styleNonce = base64.StdEncoding.EncodeToString([]byte(xsrftoken.Generate(wm.XsrfSecret, "", "style")))
 	w.Header().Set("X-Frame-Options", "DENY")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("X-Permitted-Cross-Domain-Policies", "none")
