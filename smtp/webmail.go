@@ -33,7 +33,7 @@ func (wm *Webmail) ListenAndServeWebmail() {
 		wm.page(wm.indexTmpl(), struct{ Mails []string }{Mails: mails})(w, req)
 	})
 	http.HandleFunc("/login", wm.loginFormHandler)
-	http.HandleFunc("/mail", wm.showMailHandler)
+	http.HandleFunc("/mail/", wm.showMailHandler)
 
 	log.Println("Starting webmail server at", "0.0.0.0:8443")
 	if os.Getenv("NO_TLS") == "" {
@@ -117,6 +117,7 @@ func (wm *Webmail) loginFormHandler(w http.ResponseWriter, req *http.Request) {
 
 // Shows a mail
 func (wm *Webmail) showMailHandler(w http.ResponseWriter, req *http.Request) {
+	log.Printf("showmail: %v", req.URL.EscapedPath())
 	if !wm.validSession(req) {
 		w.WriteHeader(http.StatusForbidden)
 		return
