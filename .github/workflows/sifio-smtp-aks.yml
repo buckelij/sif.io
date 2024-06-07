@@ -24,8 +24,6 @@
 # For more information on GitHub Actions for Azure, refer to https://github.com/Azure/Actions
 # For more samples to get started with GitHub Action workflows to deploy to Azure, refer to https://github.com/Azure/actions-workflow-samples
 # For more options with the actions used below please refer to https://github.com/Azure/login
-#
-#
 # az aks create \
 #     --resource-group sif_group \
 #     --name sifio \
@@ -57,11 +55,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     # Checks out the repository this file is in
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     # Logs in with your Azure credentials
     - name: Azure login
-      uses: azure/login@v1.4.7
+      uses: azure/login@v2.1.1
       with:
         client-id: ${{ secrets.AZURE_CLIENT_ID }}
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -80,7 +78,7 @@ jobs:
     steps:
     # Logs in with your Azure credentials
     - name: Azure login
-      uses: azure/login@v1.4.7
+      uses: azure/login@v2.1.1
       with:
         client-id: ${{ secrets.AZURE_CLIENT_ID }}
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -88,7 +86,7 @@ jobs:
       
     # Retrieves your Azure Kubernetes Service cluster's kubeconfig file
     - name: Get K8s context
-      uses: azure/aks-set-context@v2.0
+      uses: azure/aks-set-context@v4.0.0
       with:
         resource-group: ${{ env.RESOURCE_GROUP }}
         cluster-name: ${{ env.CLUSTER_NAME }}
@@ -107,7 +105,7 @@ jobs:
 
     # Creates a kubernetes secret on your Azure Kubernetes Service cluster that matches up to the credentials from the last step
     - name: Create K8s secret for pulling image from ACR
-      uses: Azure/k8s-create-secret@v1.1
+      uses: Azure/k8s-create-secret@v5.0.0
       with:
         container-registry-url: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io
         container-registry-username: ${{ steps.get-acr-creds.outputs.username }}
@@ -127,7 +125,7 @@ jobs:
     
     # Logs in with your Azure credentials
     - name: Azure login
-      uses: azure/login@v1.4.7
+      uses: azure/login@v2.1.1
       with:
         client-id: ${{ secrets.AZURE_CLIENT_ID }}
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -135,7 +133,7 @@ jobs:
       
     # Retrieves your Azure Kubernetes Service cluster's kubeconfig file
     - name: Get K8s context
-      uses: azure/aks-set-context@v2.0
+      uses: azure/aks-set-context@v4.0.0
       with:
         resource-group: ${{ env.RESOURCE_GROUP }}
         cluster-name: ${{ env.CLUSTER_NAME }}
@@ -162,7 +160,7 @@ jobs:
 
     # Deploys application based on given manifest file
     - name: Deploys application
-      uses: Azure/k8s-deploy@v3.1
+      uses: Azure/k8s-deploy@5.0.0
       with:
         action: deploy
         manifests: ${{ env.DEPLOYMENT_MANIFEST_PATH }}
