@@ -47,7 +47,6 @@ func newServer() *smtp.Server {
 	s.WriteTimeout = 10 * time.Second
 	s.MaxMessageBytes = 1024 * 1024 * 5
 	s.MaxRecipients = 500
-	s.AuthDisabled = true
 
 	return s
 }
