@@ -2,11 +2,9 @@ FROM golang:1-alpine
 
 WORKDIR /usr/src/app
 ENV CGO_ENABLED=0
-COPY go.mod go.sum ./
-RUN go mod download && go mod verify
-COPY *.go ./
+COPY . ./
 RUN go test
-RUN go build -v -o /usr/local/bin/app ./...
+RUN go build cmd/www/main.go -v -o /usr/local/bin/app ./...
 
 FROM alpine:3
 WORKDIR /usr/src/app

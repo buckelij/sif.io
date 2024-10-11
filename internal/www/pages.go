@@ -1,5 +1,5 @@
 // http server for sif.io
-package main
+package www
 
 import (
 	"fmt"
@@ -7,31 +7,25 @@ import (
 	"net/http"
 )
 
-func main() {
-	http.HandleFunc("/", index(index_html))
-	http.HandleFunc("/resume", page(resume_html))
-	log.Fatal(http.ListenAndServe("0.0.0.0:8000", nil))
-}
-
-func index(i string) func(http.ResponseWriter, *http.Request) {
+func Index(i string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
 		if req.URL.Path != "/" {
 			log.Printf("path=%q ip=%q status=404", req.URL.Path, req.RemoteAddr)
 			http.NotFound(w, req)
 			return
 		}
-		page(i)(w, req)
+		Page(i)(w, req)
 	}
 }
 
-func page(page string) func(http.ResponseWriter, *http.Request) {
+func Page(page string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
 		log.Printf("path=%q ip=%q status=200", req.URL.Path, req.RemoteAddr)
 		fmt.Fprint(w, page)
 	}
 }
 
-var index_html = `<!DOCTYPE html>
+var IndexHtml = `<!DOCTYPE html>
     <html>
     <head>
     	<meta charset="UTF-8">
@@ -87,7 +81,7 @@ var index_html = `<!DOCTYPE html>
     </body>
     </html>`
 
-var resume_html = `<!DOCTYPE HTML>
+var ResumeHtml = `<!DOCTYPE HTML>
 	<html>
 	<head>
 		<meta charset="UTF-8">

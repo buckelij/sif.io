@@ -12,21 +12,10 @@ import (
 	"os"
 	"time"
 
-	smtp "github.com/emersion/go-smtp"
+	"github.com/buckelij/sif.io/internal/smtp"
+	gosmtp "github.com/emersion/go-smtp"
 	"golang.org/x/crypto/bcrypt"
 )
-
-type configuration struct {
-	listenAddress string
-	domain        string
-	mxDomains     string
-	blobAccount   string
-	blobContainer string
-	blobKey       string
-	blobClient    BlobClient
-}
-
-var config configuration
 
 /*
 EHLO localhost
@@ -36,13 +25,11 @@ DATA
 Hey <3
 .
 */
-func newServer() *smtp.Server {
-	be := &Backend{}
+func newServer(be *smtp.Backend) *gosmtp.Server {
+	s := gosmtp.NewServer(be)
 
-	s := smtp.NewServer(be)
-
-	s.Addr = config.listenAddress
-	s.Domain = config.domain
+	s.Addr = be.ListenAddress
+	s.Domain = be.Domain
 	s.ReadTimeout = 10 * time.Second
 	s.WriteTimeout = 10 * time.Second
 	s.MaxMessageBytes = 1024 * 1024 * 5
@@ -52,13 +39,14 @@ func newServer() *smtp.Server {
 }
 
 func main() {
+	log.Println("starting")
 	if len(os.Args) > 2 && os.Args[1] == "genpass" {
 		v, _ := bcrypt.GenerateFromPassword([]byte(os.Args[2]), bcrypt.DefaultCost)
 		fmt.Println(string(v))
 		return
 	}
 
-	blobClient, err := NewAzureBlobClient(os.Getenv("BLOB_ACCOUNT"), os.Getenv("BLOB_CONTAINER"), os.Getenv("BLOB_KEY"))
+	blobClient, err := smtp.NewAzureBlobClient(os.Getenv("BLOB_ACCOUNT"), os.Getenv("BLOB_CONTAINER"), os.Getenv("BLOB_KEY"))
 	if err != nil {
 		panic("failed to create blob client")
 	}
@@ -67,23 +55,22 @@ func main() {
 		log.Println("failed to upload ping", err)
 	}
 
-	config = configuration{
-		"0.0.0.0:1025",
-		"mx.sif.io",
-		os.Getenv("MX_DOMAINS"),
-		os.Getenv("BLOB_ACCOUNT"),
-		os.Getenv("BLOB_CONTAINER"),
-		os.Getenv("BLOB_KEY"),
-		blobClient,
-	}
-	s := newServer()
+	s := newServer(&smtp.Backend{
+		ListenAddress: "0.0.0.0:1025",
+		Domain:        "mx.sif.io",
+		MxDomains:     os.Getenv("MX_DOMAINS"),
+		BlobAccount:   os.Getenv("BLOB_ACCOUNT"),
+		BlobContainer: os.Getenv("BLOB_CONTAINER"),
+		BlobKey:       os.Getenv("BLOB_KEY"),
+		BlobClient:    blobClient,
+	})
 	log.Println("Starting server at", s.Addr)
 
 	xsrfSecret := os.Getenv("XSRF_SECRET")
 	if xsrfSecret == "" {
 		log.Fatal("XSRF_SECRET not set")
 	}
-	webmailservice := Webmail{XsrfSecret: xsrfSecret, BlobClient: blobClient}
+	webmailservice := smtp.Webmail{XsrfSecret: xsrfSecret, BlobClient: blobClient}
 	go webmailservice.ListenAndServeWebmail()
 
 	if err := s.ListenAndServe(); err != nil {

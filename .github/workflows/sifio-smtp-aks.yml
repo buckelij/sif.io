@@ -45,7 +45,7 @@ env:
   RESOURCE_GROUP: "sif_group"
   CLUSTER_NAME: "sifio"
   IMAGE_PULL_SECRET_NAME: "sifio-github-actions-secret"
-  DEPLOYMENT_MANIFEST_PATH: "smtp/production.yml"
+  DEPLOYMENT_MANIFEST_PATH: "config/smtp/production.yml"
 
 jobs:
   buildImage:
@@ -68,7 +68,7 @@ jobs:
     # Builds and pushes an image up to your Azure Container Registry
     - name: Build and push image to ACR
       run: |
-        az acr build --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:${{ github.sha }} --registry ${{ env.AZURE_CONTAINER_REGISTRY }} -g ${{ env.RESOURCE_GROUP }} smtp
+        az acr build --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:${{ github.sha }} --registry ${{ env.AZURE_CONTAINER_REGISTRY }} -g ${{ env.RESOURCE_GROUP }} --file config/smtp/Dockerfile .
 
   createSecret:
     permissions:

@@ -1,4 +1,4 @@
-package main
+package smtp
 
 import (
 	"io"
@@ -11,14 +11,23 @@ import (
 )
 
 // The Backend implements SMTP server methods
-type Backend struct{}
+type Backend struct {
+	ListenAddress string
+	Domain        string
+	MxDomains     string
+	BlobAccount   string
+	BlobContainer string
+	BlobKey       string
+	BlobClient    BlobClient
+}
 
 func (bkd *Backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
-	return &Session{}, nil
+	return &Session{Backend: bkd, Messages: []Message{}}, nil
 }
 
 // A Session is returned after EHLO
 type Session struct {
+	Backend  *Backend
 	Messages []Message
 }
 
@@ -53,13 +62,13 @@ func (s *Session) Reset() {}
 
 func (s *Session) Logout() error {
 	for _, m := range s.Messages {
-		for _, domain := range strings.Split(config.mxDomains, ",") {
+		for _, domain := range strings.Split(s.Backend.MxDomains, ",") {
 			if len(m.Data) == 0 {
 				return nil
 			}
 			if strings.HasSuffix(m.Recipient, domain) {
 				log.Printf("FROM: %v TO: %v MESSSAGE: %v\n", m.From, m.Recipient, string(m.Data))
-				go config.blobClient.Put("mail/"+url.QueryEscape(domain)+"/"+url.QueryEscape(time.Now().String()), m.Data)
+				go s.Backend.BlobClient.Put("mail/"+url.QueryEscape(domain)+"/"+url.QueryEscape(time.Now().String()), m.Data)
 			}
 		}
 	}

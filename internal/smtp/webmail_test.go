@@ -1,15 +1,38 @@
-package main
+package smtp
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	"sync"
 	"testing"
 
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/net/xsrftoken"
 )
+
+type TestBlobClient struct {
+	wg       sync.WaitGroup // create a wait group, this will allow you to block later
+	uploaded []string
+	gets     [][]byte // stub values to be returned
+}
+
+func (c *TestBlobClient) Put(oid string, data []byte) error {
+	c.uploaded = append(c.uploaded, oid)
+	c.wg.Done()
+	return nil
+}
+
+func (c *TestBlobClient) Get(oid string) ([]byte, error) {
+	v := c.gets[0]
+	c.gets = c.gets[1:]
+	return v, nil
+}
+
+func (c *TestBlobClient) ListMail() ([]string, error) {
+	return []string{}, nil
+}
 
 func TestValidXsrf(t *testing.T) {
 	testBlobClient := &TestBlobClient{}

@@ -1,4 +1,4 @@
-package main
+package www
 
 import (
 	"io"
@@ -18,7 +18,7 @@ var sampleHtml = `<!DOCTYPE html>
     </html>`
 
 func TestIndex404(t *testing.T) {
-	pageHandler := index(sampleHtml)
+	pageHandler := Index(sampleHtml)
 
 	req := httptest.NewRequest("GET", "http://example.com/foo", nil)
 	w := httptest.NewRecorder()
@@ -32,7 +32,7 @@ func TestIndex404(t *testing.T) {
 	}
 }
 func TestIndex(t *testing.T) {
-	pageHandler := index(sampleHtml)
+	pageHandler := Index(sampleHtml)
 
 	req := httptest.NewRequest("GET", "http://example.com/", nil)
 	w := httptest.NewRecorder()
@@ -51,7 +51,7 @@ func TestIndex(t *testing.T) {
 }
 
 func TestPage(t *testing.T) {
-	pageHandler := page(sampleHtml)
+	pageHandler := Page(sampleHtml)
 
 	req := httptest.NewRequest("GET", "http://example.com/foo", nil)
 	w := httptest.NewRecorder()

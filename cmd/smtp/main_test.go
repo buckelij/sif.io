@@ -7,6 +7,8 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	sifsmtp "github.com/buckelij/sif.io/internal/smtp"
 )
 
 type TestBlobClient struct {
@@ -33,16 +35,15 @@ func (c *TestBlobClient) ListMail() ([]string, error) {
 
 func TestStoresMail(t *testing.T) {
 	testBlobClient := &TestBlobClient{}
-	config = configuration{
-		"0.0.0.0:1025",
-		"mx.sif.io",
-		"sif.io",
-		"blob-account",
-		"blob-container",
-		"blob-secret",
-		testBlobClient,
-	}
-	s := newServer()
+	s := newServer(&sifsmtp.Backend{
+		ListenAddress: "0.0.0.0:1025",
+		Domain:        "mx.sif.io",
+		MxDomains:     "sif.io",
+		BlobAccount:   "blob-account",
+		BlobContainer: "blob-container",
+		BlobKey:       "blob-secret",
+		BlobClient:    testBlobClient,
+	})
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
