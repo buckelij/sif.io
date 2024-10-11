@@ -2,9 +2,9 @@ FROM golang:1-alpine
 
 WORKDIR /usr/src/app
 ENV CGO_ENABLED=0
-COPY . ./
-RUN go test
-RUN go build cmd/www/main.go -v -o /usr/local/bin/app ./...
+COPY . .
+RUN go test ./...
+RUN go build -v -o /usr/local/bin/app cmd/www/main.go
 
 FROM alpine:3
 WORKDIR /usr/src/app
