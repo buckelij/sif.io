@@ -9,7 +9,7 @@ RUN go build -v -o /usr/local/bin/app cmd/smtp/main.go
 
 # sudo apt-get install qemu binfmt-support qemu-user-static
 # docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-FROM --platform=linux/arm64/v8 arm64v8/alpine:3.14
+FROM --platform=linux/arm64/v8 arm64v8/alpine:3
 WORKDIR /usr/src/app
 COPY --from=0 /usr/local/bin/app /usr/local/bin/app
 
