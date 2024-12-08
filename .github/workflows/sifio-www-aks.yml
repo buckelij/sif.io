@@ -43,7 +43,7 @@ env:
   AZURE_CONTAINER_REGISTRY: "sifiocr"
   CONTAINER_NAME: "sifio-www"
   RESOURCE_GROUP: "sif_group"
-  CLUSTER_NAME: "sifio"
+  CLUSTER_NAME: "sifio_k8s"
   IMAGE_PULL_SECRET_NAME: "sifio-github-actions-secret"
   DEPLOYMENT_MANIFEST_PATH: "config/www/production.yml"
 
