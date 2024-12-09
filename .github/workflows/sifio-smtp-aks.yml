@@ -73,7 +73,7 @@ jobs:
     - name: Build and push image to ACR
       run: |
         az acr login --name ${{ env.AZURE_CONTAINER_REGISTRY }}
-        docker build -t ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:${{ github.sha }} -f config/www/Dockerfile .
+        docker build -t ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:${{ github.sha }} -f config/smtp/Dockerfile .
         docker push ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:${{ github.sha }}
 
   createSecret:
