@@ -138,10 +138,15 @@ func (wm *Webmail) showMailHandler(w http.ResponseWriter, req *http.Request) {
 		log.Printf("showMailHandler %v: %v", req.URL.EscapedPath(), err)
 	}
 	body := string(b)
-	bodyStart := strings.Index(body, "<body>")
+	bodyStart := strings.Index(body, "<body")
 	bodyEnd := strings.LastIndex(body, "</body>")
 	if bodyStart != -1 && bodyEnd != -1 {
-		body = wm.sanitizer.Sanitize(body[bodyStart:bodyEnd])
+		body = body[bodyStart:bodyEnd]
+		bodyStartEndTag := strings.Index(body, ">")
+		if bodyStartEndTag != -1 {
+			body = body[bodyStartEndTag:]
+		}
+		body = wm.sanitizer.Sanitize(body)
 	}
 	wm.page(wm.showMailTmpl(), struct{ Body string }{Body: body})(w, req)
 }
