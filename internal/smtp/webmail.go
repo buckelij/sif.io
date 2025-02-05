@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	textTemplate "text/template"
 
 	"github.com/microcosm-cc/bluemonday"
 	"golang.org/x/crypto/bcrypt"
@@ -62,18 +63,7 @@ func (wm *Webmail) ListenAndServeWebmail() {
 // checks session, sets cors xsrf and other headers, renders page
 func (wm *Webmail) page(content string, data any) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
-		styleNonce := wm.setSecurityHeaders(w)
-		formToken := xsrftoken.Generate(wm.xsrfSecret, "", "")
-		http.SetCookie(w, &http.Cookie{
-			Name:     "xsrftoken",
-			Value:    formToken,
-			Path:     "/",
-			MaxAge:   3600,
-			HttpOnly: true,
-			Secure:   true,
-			SameSite: http.SameSiteStrictMode,
-		})
-
+		styleNonce, formToken := wm.setPageHeadersAndCookies(w)
 		pageTmpl := template.Must(template.New("rendered").Parse(wm.header() + content + wm.footer()))
 		err := pageTmpl.Execute(w, struct {
 			XsrfToken  string
@@ -87,6 +77,21 @@ func (wm *Webmail) page(content string, data any) func(http.ResponseWriter, *htt
 
 		log.Printf("path=%q ip=%q", req.URL.Path, req.RemoteAddr)
 	}
+}
+
+func (wm *Webmail) setPageHeadersAndCookies(w http.ResponseWriter) (styleNonce, formToken string) {
+	newStyleNonce := wm.setSecurityHeaders(w)
+	newFormToken := xsrftoken.Generate(wm.xsrfSecret, "", "")
+	http.SetCookie(w, &http.Cookie{
+		Name:     "xsrftoken",
+		Value:    newFormToken,
+		Path:     "/",
+		MaxAge:   3600,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	})
+	return newStyleNonce, newFormToken
 }
 
 // checks credentials in login POST and sets session
@@ -137,6 +142,7 @@ func (wm *Webmail) showMailHandler(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Printf("showMailHandler %v: %v", req.URL.EscapedPath(), err)
 	}
+
 	body := string(b)
 	bodyStart := strings.Index(body, "<body")
 	bodyEnd := strings.LastIndex(body, "</body>")
@@ -148,7 +154,20 @@ func (wm *Webmail) showMailHandler(w http.ResponseWriter, req *http.Request) {
 		}
 		body = wm.sanitizer.Sanitize(body)
 	}
-	wm.page(wm.showMailTmpl(), struct{ Body string }{Body: body})(w, req)
+
+	styleNonce, formToken := wm.setPageHeadersAndCookies(w)
+	pageTmpl := textTemplate.Must(textTemplate.New("rendered").Parse(wm.header() + wm.showMailTmpl() + wm.footer()))
+	err = pageTmpl.Execute(w, struct {
+		XsrfToken  string
+		StyleNonce string
+		LoggedIn   bool
+		Data       any
+	}{formToken, styleNonce, wm.validSession(req), struct{ Body string }{Body: body}})
+	if err != nil {
+		log.Printf("failed render: %v", err)
+	}
+
+	log.Printf("path=%q ip=%q", req.URL.Path, req.RemoteAddr)
 }
 
 func (wm *Webmail) setSecurityHeaders(w http.ResponseWriter) (styleNonce string) {
