@@ -36,9 +36,9 @@ func (c *TestBlobClient) ListMail() ([]string, error) {
 
 func TestValidXsrf(t *testing.T) {
 	testBlobClient := &TestBlobClient{}
-	wm := Webmail{XsrfSecret: "123", BlobClient: testBlobClient}
+	wm := NewWebMailer("123", testBlobClient)
 
-	formToken := xsrftoken.Generate(wm.XsrfSecret, "", "")
+	formToken := xsrftoken.Generate(wm.xsrfSecret, "", "")
 	data := url.Values{}
 	data.Set("xsrftoken", formToken)
 	r := httptest.NewRequest("POST", "/login", strings.NewReader(data.Encode()))
@@ -53,7 +53,7 @@ func TestValidXsrf(t *testing.T) {
 
 func TestSetSecurityHeaders(t *testing.T) {
 	testBlobClient := &TestBlobClient{}
-	wm := Webmail{XsrfSecret: "123", BlobClient: testBlobClient}
+	wm := NewWebMailer("123", testBlobClient)
 
 	rr := httptest.NewRecorder()
 	styleNonce := wm.setSecurityHeaders(rr)
@@ -64,9 +64,9 @@ func TestSetSecurityHeaders(t *testing.T) {
 
 func TestValidSession(t *testing.T) {
 	testBlobClient := &TestBlobClient{}
-	wm := Webmail{XsrfSecret: "123", BlobClient: testBlobClient}
+	wm := NewWebMailer("123", testBlobClient)
 
-	formToken := xsrftoken.Generate(wm.XsrfSecret, "buckelij", "session")
+	formToken := xsrftoken.Generate(wm.xsrfSecret, "buckelij", "session")
 	data := url.Values{}
 	data.Set("xsrftoken", formToken)
 	r := httptest.NewRequest("POST", "/login", strings.NewReader(data.Encode()))
@@ -85,7 +85,7 @@ func TestValidCredentials(t *testing.T) {
 	gets = append(gets, hsh)
 	gets = append(gets, hsh)
 	testBlobClient := &TestBlobClient{gets: gets}
-	wm := Webmail{XsrfSecret: "123", BlobClient: testBlobClient}
+	wm := NewWebMailer("123", testBlobClient)
 	if !wm.validCredentials("testuser", "testpass") {
 		t.Fatal()
 	}

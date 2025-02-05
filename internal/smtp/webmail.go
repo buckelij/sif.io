@@ -8,13 +8,23 @@ import (
 	"os"
 	"strings"
 
+	"github.com/microcosm-cc/bluemonday"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/net/xsrftoken"
 )
 
 type Webmail struct {
-	XsrfSecret string
-	BlobClient BlobClient
+	xsrfSecret string
+	blobClient BlobClient
+	sanitizer  *bluemonday.Policy
+}
+
+func NewWebMailer(xsrfSecret string, blobClient BlobClient) *Webmail {
+	return &Webmail{
+		xsrfSecret: xsrfSecret,
+		blobClient: blobClient,
+		sanitizer:  bluemonday.UGCPolicy(),
+	}
 }
 
 func (wm *Webmail) ListenAndServeWebmail() {
@@ -26,7 +36,7 @@ func (wm *Webmail) ListenAndServeWebmail() {
 		mails := []string{}
 		if wm.validSession(req) {
 			var err error
-			mails, err = wm.BlobClient.ListMail()
+			mails, err = wm.blobClient.ListMail()
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
@@ -41,7 +51,7 @@ func (wm *Webmail) ListenAndServeWebmail() {
 	if os.Getenv("NO_TLS") == "" {
 		s := &http.Server{
 			Addr:      "0.0.0.0:8443",
-			TLSConfig: NewSSLmanager(wm.BlobClient).TLSConfig(),
+			TLSConfig: NewSSLmanager(wm.blobClient).TLSConfig(),
 		}
 		log.Fatal(s.ListenAndServeTLS("", ""))
 	} else {
@@ -52,18 +62,7 @@ func (wm *Webmail) ListenAndServeWebmail() {
 // checks session, sets cors xsrf and other headers, renders page
 func (wm *Webmail) page(content string, data any) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
-		styleNonce := wm.setSecurityHeaders(w)
-		formToken := xsrftoken.Generate(wm.XsrfSecret, "", "")
-		http.SetCookie(w, &http.Cookie{
-			Name:     "xsrftoken",
-			Value:    formToken,
-			Path:     "/",
-			MaxAge:   3600,
-			HttpOnly: true,
-			Secure:   true,
-			SameSite: http.SameSiteStrictMode,
-		})
-
+		styleNonce, formToken := wm.setPageHeadersAndCookies(w)
 		pageTmpl := template.Must(template.New("rendered").Parse(wm.header() + content + wm.footer()))
 		err := pageTmpl.Execute(w, struct {
 			XsrfToken  string
@@ -79,6 +78,21 @@ func (wm *Webmail) page(content string, data any) func(http.ResponseWriter, *htt
 	}
 }
 
+func (wm *Webmail) setPageHeadersAndCookies(w http.ResponseWriter) (styleNonce, formToken string) {
+	newStyleNonce := wm.setSecurityHeaders(w)
+	newFormToken := xsrftoken.Generate(wm.xsrfSecret, "", "")
+	http.SetCookie(w, &http.Cookie{
+		Name:     "xsrftoken",
+		Value:    newFormToken,
+		Path:     "/",
+		MaxAge:   3600,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	})
+	return newStyleNonce, newFormToken
+}
+
 // checks credentials in login POST and sets session
 func (wm *Webmail) loginFormHandler(w http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
@@ -90,7 +104,7 @@ func (wm *Webmail) loginFormHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	if wm.validCredentials(req.FormValue("user"), req.FormValue("password")) {
-		sessionCookie := xsrftoken.Generate(wm.XsrfSecret, req.FormValue("user"), "session")
+		sessionCookie := xsrftoken.Generate(wm.xsrfSecret, req.FormValue("user"), "session")
 		http.SetCookie(w, &http.Cookie{
 			Name:     "user",
 			Value:    req.FormValue("user"),
@@ -119,19 +133,29 @@ func (wm *Webmail) loginFormHandler(w http.ResponseWriter, req *http.Request) {
 
 // Shows a mail
 func (wm *Webmail) showMailHandler(w http.ResponseWriter, req *http.Request) {
+	defer log.Printf("path=%q ip=%q", req.URL.Path, req.RemoteAddr)
 	if !wm.validSession(req) {
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
-	b, err := wm.BlobClient.Get(strings.TrimPrefix(req.URL.EscapedPath(), "/mail/"))
+
+	b, err := wm.blobClient.Get(strings.TrimPrefix(req.URL.EscapedPath(), "/mail/"))
 	if err != nil {
 		log.Printf("showMailHandler %v: %v", req.URL.EscapedPath(), err)
+		return
 	}
-	wm.page(wm.showMailTmpl(), struct{ Body string }{Body: string(b)})(w, req)
+
+	parsedMimeMessage, err := ParseMimeMessage(b, wm.sanitizer)
+	if err != nil {
+		wm.page(`<div>{{.Data.Body}}</div>`, struct{ Body string }{Body: "Error:" + err.Error() + "\n" + string(b)})(w, req)
+		return
+	} else {
+		wm.page(wm.showMailTmpl(), parsedMimeMessage)(w, req)
+	}
 }
 
 func (wm *Webmail) setSecurityHeaders(w http.ResponseWriter) (styleNonce string) {
-	styleNonce = base64.StdEncoding.EncodeToString([]byte(xsrftoken.Generate(wm.XsrfSecret, "", "style")))
+	styleNonce = base64.StdEncoding.EncodeToString([]byte(xsrftoken.Generate(wm.xsrfSecret, "", "style")))
 	w.Header().Set("X-Frame-Options", "DENY")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("X-Permitted-Cross-Domain-Policies", "none")
@@ -143,7 +167,7 @@ func (wm *Webmail) setSecurityHeaders(w http.ResponseWriter) (styleNonce string)
 func (wm *Webmail) validSession(req *http.Request) bool {
 	if session, err := req.Cookie("session"); err == nil {
 		if user, err := req.Cookie("user"); err == nil {
-			return xsrftoken.ValidFor(session.Value, wm.XsrfSecret, user.Value, "session", xsrftoken.Timeout)
+			return xsrftoken.ValidFor(session.Value, wm.xsrfSecret, user.Value, "session", xsrftoken.Timeout)
 		}
 	}
 	return false
@@ -158,12 +182,12 @@ func (wm *Webmail) validXsrf(req *http.Request) bool {
 		return false
 	}
 
-	return xsrftoken.ValidFor(req.FormValue("xsrftoken"), wm.XsrfSecret, "", "", xsrftoken.Timeout)
+	return xsrftoken.ValidFor(req.FormValue("xsrftoken"), wm.xsrfSecret, "", "", xsrftoken.Timeout)
 }
 
 // auth handler, comparing to a bcrypt in blob storage
 func (wm *Webmail) validCredentials(user string, password string) bool {
-	hsh, err := wm.BlobClient.Get("bcrypt/" + user)
+	hsh, err := wm.blobClient.Get("bcrypt/" + user)
 	if err != nil {
 		return false
 	}
@@ -196,7 +220,13 @@ func (wm *Webmail) indexTmpl() string {
 }
 
 func (wm *Webmail) showMailTmpl() string {
-	return `<div>{{.Data.Body}}</div>`
+	return `<div>
+		{{if eq .SanitizedHtmlContent == ""}}
+			{{.RawContent}}
+		{{else}}
+			{{.SanitizedHtmlContent}}
+		{{end}}
+	</div>`
 }
 
 func (wm *Webmail) header() string {

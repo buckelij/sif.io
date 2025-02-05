@@ -70,7 +70,7 @@ func main() {
 	if xsrfSecret == "" {
 		log.Fatal("XSRF_SECRET not set")
 	}
-	webmailservice := smtp.Webmail{XsrfSecret: xsrfSecret, BlobClient: blobClient}
+	webmailservice := smtp.NewWebMailer(xsrfSecret, blobClient)
 	go webmailservice.ListenAndServeWebmail()
 
 	if err := s.ListenAndServe(); err != nil {
