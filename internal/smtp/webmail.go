@@ -144,7 +144,7 @@ func (wm *Webmail) showMailHandler(w http.ResponseWriter, req *http.Request) {
 		body = body[bodyStart:bodyEnd]
 		bodyStartEndTag := strings.Index(body, ">")
 		if bodyStartEndTag != -1 {
-			body = body[bodyStartEndTag:]
+			body = body[bodyStartEndTag+1:]
 		}
 		body = wm.sanitizer.Sanitize(body)
 	}
