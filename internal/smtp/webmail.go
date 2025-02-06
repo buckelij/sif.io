@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	textTemplate "text/template"
 
 	"github.com/microcosm-cc/bluemonday"
 	"golang.org/x/crypto/bcrypt"
@@ -134,40 +133,25 @@ func (wm *Webmail) loginFormHandler(w http.ResponseWriter, req *http.Request) {
 
 // Shows a mail
 func (wm *Webmail) showMailHandler(w http.ResponseWriter, req *http.Request) {
+	defer log.Printf("path=%q ip=%q", req.URL.Path, req.RemoteAddr)
 	if !wm.validSession(req) {
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
+
 	b, err := wm.blobClient.Get(strings.TrimPrefix(req.URL.EscapedPath(), "/mail/"))
 	if err != nil {
 		log.Printf("showMailHandler %v: %v", req.URL.EscapedPath(), err)
+		return
 	}
 
-	body := string(b)
-	bodyStart := strings.Index(body, "<body")
-	bodyEnd := strings.LastIndex(body, "</body>")
-	if bodyStart != -1 && bodyEnd != -1 {
-		body = body[bodyStart:bodyEnd]
-		bodyStartEndTag := strings.Index(body, ">")
-		if bodyStartEndTag != -1 {
-			body = body[bodyStartEndTag+1:]
-		}
-		body = wm.sanitizer.Sanitize(body)
-	}
-
-	styleNonce, formToken := wm.setPageHeadersAndCookies(w)
-	pageTmpl := textTemplate.Must(textTemplate.New("rendered").Parse(wm.header() + wm.showMailTmpl() + wm.footer()))
-	err = pageTmpl.Execute(w, struct {
-		XsrfToken  string
-		StyleNonce string
-		LoggedIn   bool
-		Data       any
-	}{formToken, styleNonce, wm.validSession(req), struct{ Body string }{Body: body}})
+	parsedMimeMessage, err := ParseMimeMessage(b, wm.sanitizer)
 	if err != nil {
-		log.Printf("failed render: %v", err)
+		wm.page(`<div>{{.Data.Body}}</div>`, struct{ Body string }{Body: "Error:" + err.Error() + "\n" + string(b)})(w, req)
+		return
+	} else {
+		wm.page(wm.showMailTmpl(), parsedMimeMessage)(w, req)
 	}
-
-	log.Printf("path=%q ip=%q", req.URL.Path, req.RemoteAddr)
 }
 
 func (wm *Webmail) setSecurityHeaders(w http.ResponseWriter) (styleNonce string) {
@@ -236,7 +220,13 @@ func (wm *Webmail) indexTmpl() string {
 }
 
 func (wm *Webmail) showMailTmpl() string {
-	return `<div>{{.Data.Body}}</div>`
+	return `<div>
+		{{if eq .SanitizedHtmlContent == ""}}
+			{{.RawContent}}
+		{{else}}
+			{{.SanitizedHtmlContent}}
+		{{end}}
+	</div>`
 }
 
 func (wm *Webmail) header() string {
