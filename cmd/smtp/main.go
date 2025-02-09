@@ -17,6 +17,22 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var config = struct {
+	MxDomains     string
+	BlobAccount   string
+	BlobContainer string
+	BlobKey       string
+	XsrfSecret    string
+	NoTls         string
+}{
+	MxDomains:     os.Getenv("MX_DOMAINS"),
+	BlobAccount:   os.Getenv("BLOB_ACCOUNT"),
+	BlobContainer: os.Getenv("BLOB_CONTAINER"),
+	BlobKey:       os.Getenv("BLOB_KEY"),
+	XsrfSecret:    os.Getenv("XSRF_SECRET"),
+	NoTls:         os.Getenv("NO_TLS"),
+}
+
 /*
 EHLO localhost
 MAIL FROM:<root@example.com>
@@ -46,7 +62,7 @@ func main() {
 		return
 	}
 
-	blobClient, err := smtp.NewAzureBlobClient(os.Getenv("BLOB_ACCOUNT"), os.Getenv("BLOB_CONTAINER"), os.Getenv("BLOB_KEY"))
+	blobClient, err := smtp.NewAzureBlobClient(config.BlobAccount, config.BlobContainer, config.BlobKey)
 	if err != nil {
 		panic("failed to create blob client")
 	}
@@ -58,19 +74,19 @@ func main() {
 	s := newServer(&smtp.Backend{
 		ListenAddress: "0.0.0.0:1025",
 		Domain:        "mx.sif.io",
-		MxDomains:     os.Getenv("MX_DOMAINS"),
-		BlobAccount:   os.Getenv("BLOB_ACCOUNT"),
-		BlobContainer: os.Getenv("BLOB_CONTAINER"),
-		BlobKey:       os.Getenv("BLOB_KEY"),
+		MxDomains:     config.MxDomains,
+		BlobAccount:   config.BlobAccount,
+		BlobContainer: config.BlobContainer,
+		BlobKey:       config.BlobKey,
 		BlobClient:    blobClient,
 	})
 	log.Println("Starting server at", s.Addr)
 
-	xsrfSecret := os.Getenv("XSRF_SECRET")
+	xsrfSecret := config.XsrfSecret
 	if xsrfSecret == "" {
 		log.Fatal("XSRF_SECRET not set")
 	}
-	webmailservice := smtp.NewWebMailer(xsrfSecret, blobClient)
+	webmailservice := smtp.NewWebMailer(xsrfSecret, blobClient, config.NoTls != "")
 	go webmailservice.ListenAndServeWebmail()
 
 	if err := s.ListenAndServe(); err != nil {

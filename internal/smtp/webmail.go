@@ -5,7 +5,6 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/microcosm-cc/bluemonday"
@@ -17,13 +16,15 @@ type Webmail struct {
 	xsrfSecret string
 	blobClient BlobClient
 	sanitizer  *bluemonday.Policy
+	noTls      bool
 }
 
-func NewWebMailer(xsrfSecret string, blobClient BlobClient) *Webmail {
+func NewWebMailer(xsrfSecret string, blobClient BlobClient, noTls bool) *Webmail {
 	return &Webmail{
 		xsrfSecret: xsrfSecret,
 		blobClient: blobClient,
 		sanitizer:  bluemonday.UGCPolicy(),
+		noTls:      noTls,
 	}
 }
 
@@ -48,14 +49,14 @@ func (wm *Webmail) ListenAndServeWebmail() {
 	http.HandleFunc("/mail/", wm.showMailHandler)
 
 	log.Println("Starting webmail server at", "0.0.0.0:8443")
-	if os.Getenv("NO_TLS") == "" {
+	if wm.noTls {
+		log.Fatal(http.ListenAndServe("0.0.0.0:8443", nil))
+	} else {
 		s := &http.Server{
 			Addr:      "0.0.0.0:8443",
 			TLSConfig: NewSSLmanager(wm.blobClient).TLSConfig(),
 		}
 		log.Fatal(s.ListenAndServeTLS("", ""))
-	} else {
-		log.Fatal(http.ListenAndServe("0.0.0.0:8443", nil))
 	}
 }
 
@@ -221,11 +222,26 @@ func (wm *Webmail) indexTmpl() string {
 
 func (wm *Webmail) showMailTmpl() string {
 	return `<div>
-		{{if eq .SanitizedHtmlContent == ""}}
+	    <h3>Message</h3>
+		<ul>
+		  <li><strong>From</strong>: {{ .Data.From }}</li>
+		  <li><strong>To</strong>: {{ .Data.To }}</li>
+		  <li><strong>Date</strong>: {{ .Data.Date }}</li>
+		  <li><strong>Subject</strong>: {{ .Data.Subject }}</li>
+		</ul>
+		{{if eq .Data.SanitizedHtmlContent ""}}
 			{{.RawContent}}
 		{{else}}
-			{{.SanitizedHtmlContent}}
+			{{.Data.SanitizedHtmlContent}}
 		{{end}}
+		<div>
+		<h3>Attached mime parts</h3>
+		<ul>
+		{{ range $key, $value := .Data.AttachedMimeParts }}
+			<li><strong>{{ $key }}</strong>: {{ len $value }}</li>
+		{{ end }}
+		 </ul>
+		</div>
 	</div>`
 }
 
