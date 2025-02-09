@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/microcosm-cc/bluemonday"
@@ -42,6 +43,7 @@ func (wm *Webmail) ListenAndServeWebmail() {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
+			slices.Reverse(mails)
 		}
 		wm.page(wm.indexTmpl(), struct{ Mails []string }{Mails: mails})(w, req)
 	})
