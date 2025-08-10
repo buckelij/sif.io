@@ -1,14 +1,15 @@
-package smtp
+package ssl
 
 import (
 	"context"
 	"log"
 	"net/url"
 
+	"github.com/buckelij/sif.io/internal/blob"
 	"golang.org/x/crypto/acme/autocert"
 )
 
-func NewSSLmanager(c BlobClient) *autocert.Manager {
+func NewSSLmanager(c blob.BlobClient) *autocert.Manager {
 	return &autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
 		Cache:      SSLblobCache{c},
@@ -17,7 +18,7 @@ func NewSSLmanager(c BlobClient) *autocert.Manager {
 }
 
 type SSLblobCache struct {
-	BlobClient BlobClient
+	BlobClient blob.BlobClient
 }
 
 var _ autocert.Cache = SSLblobCache{}

@@ -8,6 +8,8 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/buckelij/sif.io/internal/blob"
+	"github.com/buckelij/sif.io/internal/ssl"
 	"github.com/microcosm-cc/bluemonday"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/net/xsrftoken"
@@ -15,12 +17,12 @@ import (
 
 type Webmail struct {
 	xsrfSecret string
-	blobClient BlobClient
+	blobClient blob.BlobClient
 	sanitizer  *bluemonday.Policy
 	noTls      bool
 }
 
-func NewWebMailer(xsrfSecret string, blobClient BlobClient, noTls bool) *Webmail {
+func NewWebMailer(xsrfSecret string, blobClient blob.BlobClient, noTls bool) *Webmail {
 	return &Webmail{
 		xsrfSecret: xsrfSecret,
 		blobClient: blobClient,
@@ -56,7 +58,7 @@ func (wm *Webmail) ListenAndServeWebmail() {
 	} else {
 		s := &http.Server{
 			Addr:      "0.0.0.0:8443",
-			TLSConfig: NewSSLmanager(wm.blobClient).TLSConfig(),
+			TLSConfig: ssl.NewSSLmanager(wm.blobClient).TLSConfig(),
 		}
 		log.Fatal(s.ListenAndServeTLS("", ""))
 	}

@@ -17,9 +17,16 @@ spec:
       containers:
       - name: sifio-www
         image: sifiocr.azurecr.io/sifio-www:GITHUB.SHA
+        env:
+        - name: BLOB_ACCOUNT
+          value: INJECTED_BLOB_ACCOUNT
+        - name: BLOB_CONTAINER
+          value: INJECTED_BLOB_CONTAINER
+        - name: BLOB_KEY
+          value: INJECTED_BLOB_KEY
         ports:
-           - containerPort: 8000
-             name: http
+           - containerPort: 8080
+           - containerPort: 8443
         resources:
           requests:
             cpu: 100m
@@ -38,6 +45,8 @@ spec:
   type: LoadBalancer
   ports:
   - port: 80
-    targetPort: 8000
+    targetPort: 8080
+  - port: 443
+    targetPort: 8443
   selector:
     app: sifio-www

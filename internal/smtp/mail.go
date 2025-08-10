@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/buckelij/sif.io/internal/blob"
 	smtp "github.com/emersion/go-smtp"
 )
 
@@ -18,7 +19,7 @@ type Backend struct {
 	BlobAccount   string
 	BlobContainer string
 	BlobKey       string
-	BlobClient    BlobClient
+	BlobClient    blob.BlobClient
 }
 
 func (bkd *Backend) NewSession(c *smtp.Conn) (smtp.Session, error) {

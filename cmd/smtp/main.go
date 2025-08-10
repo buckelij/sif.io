@@ -12,6 +12,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/buckelij/sif.io/internal/blob"
 	"github.com/buckelij/sif.io/internal/smtp"
 	gosmtp "github.com/emersion/go-smtp"
 	"golang.org/x/crypto/bcrypt"
@@ -62,11 +63,11 @@ func main() {
 		return
 	}
 
-	blobClient, err := smtp.NewAzureBlobClient(config.BlobAccount, config.BlobContainer, config.BlobKey)
+	blobClient, err := blob.NewAzureBlobClient(config.BlobAccount, config.BlobContainer, config.BlobKey)
 	if err != nil {
 		panic("failed to create blob client")
 	}
-	err = blobClient.Put("ping", []byte("pong"))
+	err = blobClient.Put("pingsmtp", []byte("pong"))
 	if err != nil {
 		log.Println("failed to upload ping", err)
 	}

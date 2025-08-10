@@ -1,4 +1,4 @@
-package smtp
+package blob
 
 import (
 	"bytes"
