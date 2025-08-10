@@ -26,27 +26,27 @@ var config = struct {
 func main() {
 	log.Println("starting")
 
-	blobClient, err := blob.NewAzureBlobClient(config.BlobAccount, config.BlobContainer, config.BlobKey)
-	if err != nil {
-		panic("failed to create blob client")
-	}
-	err = blobClient.Put("pingwww", []byte("pong"))
-	if err != nil {
-		log.Println("failed to upload ping", err)
-	}
-
 	redirMux := http.NewServeMux()
 	redirMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		targetUrl := url.URL{Scheme: "https", Host: r.Host, Path: r.URL.Path}
 		http.Redirect(w, r, targetUrl.String(), http.StatusMovedPermanently)
 	})
-	go log.Println(http.ListenAndServe(":8080", redirMux))
+	go func() { log.Println(http.ListenAndServe(":8080", redirMux)) }()
+	log.Println("started redirect listener")
 
 	http.HandleFunc("/", www.Index(www.IndexHtml))
 	http.HandleFunc("/resume", www.Page(www.ResumeHtml))
 	if config.NoTls != "" {
 		log.Fatal(http.ListenAndServe(":8443", nil))
 	} else {
+		blobClient, err := blob.NewAzureBlobClient(config.BlobAccount, config.BlobContainer, config.BlobKey)
+		if err != nil {
+			panic("failed to create blob client")
+		}
+		err = blobClient.Put("pingwww", []byte("pong"))
+		if err != nil {
+			log.Println("failed to upload ping", err)
+		}
 		s := &http.Server{
 			Addr:      ":8443",
 			TLSConfig: ssl.NewSSLmanager(blobClient).TLSConfig(),
