@@ -40,7 +40,7 @@ func main() {
 		targetUrl := url.URL{Scheme: "https", Host: r.Host, Path: r.URL.Path}
 		http.Redirect(w, r, targetUrl.String(), http.StatusMovedPermanently)
 	})
-	log.Fatal(http.ListenAndServe(":8080", redirMux))
+	go log.Default(http.ListenAndServe(":8080", redirMux)
 
 	http.HandleFunc("/", www.Index(www.IndexHtml))
 	http.HandleFunc("/resume", www.Page(www.ResumeHtml))
