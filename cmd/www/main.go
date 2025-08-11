@@ -36,6 +36,7 @@ func main() {
 
 	http.HandleFunc("/", www.Index(www.IndexHtml))
 	http.HandleFunc("/resume", www.Page(www.ResumeHtml))
+	http.HandleFunc("/linkedin", www.Redirect("https://www.linkedin.com/in/elijah-buck-2a373415"))
 	if config.NoTls != "" {
 		log.Fatal(http.ListenAndServe(":8443", nil))
 	} else {
