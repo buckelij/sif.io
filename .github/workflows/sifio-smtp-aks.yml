@@ -35,8 +35,8 @@
 name: Build and deploy smtp.sif.io to AKS
 
 on:
-  push:
-    branches: [ "main" ]
+  # push:
+  #   branches: [ "main" ]
   workflow_dispatch:
 
 env:
