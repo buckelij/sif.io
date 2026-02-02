@@ -52,12 +52,12 @@ func (wm *Webmail) ListenAndServeWebmail() {
 	http.HandleFunc("/login", wm.loginFormHandler)
 	http.HandleFunc("/mail/", wm.showMailHandler)
 
-	log.Println("Starting webmail server at", "0.0.0.0:8443")
+	log.Println("Starting webmail server at", "0.0.0.0:8444")
 	if wm.noTls {
-		log.Fatal(http.ListenAndServe("0.0.0.0:8443", nil))
+		log.Fatal(http.ListenAndServe("0.0.0.0:8444", nil))
 	} else {
 		s := &http.Server{
-			Addr:      "0.0.0.0:8443",
+			Addr:      "0.0.0.0:8444",
 			TLSConfig: ssl.NewSSLmanager(wm.blobClient).TLSConfig(),
 		}
 		log.Fatal(s.ListenAndServeTLS("", ""))
