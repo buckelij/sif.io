@@ -1,0 +1,21 @@
+{
+	email buckelij@sif.io
+	#on_demand_tls {
+	#	ask http://localhost:3000/tls-check
+	#}
+}
+
+buckelij.sif.io, sif.io {
+	#tls {
+	#	on_demand
+	#}
+	reverse_proxy http://localhost:3000
+}
+
+www.sif.io {
+	reverse_proxy http://localhost:8443
+}
+
+webmail.sif.io {
+	reverse_proxy http://localhost:8444
+}

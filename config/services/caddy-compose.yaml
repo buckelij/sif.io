@@ -1,0 +1,14 @@
+version: '3.9'
+services:
+  caddy:
+    container_name: caddy
+    image: caddy:2
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: /opt/sif.io/caddy/data
+        target: /data
+      - type: bind
+        source: /opt/sif.io/caddy/etc
+        target: /etc/caddy

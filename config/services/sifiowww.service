@@ -1,0 +1,10 @@
+[Unit]
+Description=sif.io www
+
+[Service]
+ExecStart=/opt/sif.io/www/sif.io/main
+EnvironmentFile=/opt/sif.io/www/etc/env
+User=sifio
+
+[Install]
+WantedBy=multi-user.target

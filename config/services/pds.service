@@ -1,0 +1,15 @@
+[Unit]
+Description=Bluesky PDS Service
+Documentation=https://github.com/bluesky-social/pds
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/pds
+ExecStart=/usr/bin/docker compose --file /opt/sif.io/pds/compose.yaml up --detach
+ExecStop=/usr/bin/docker compose --file /opt/sif.io/pds/compose.yaml down
+
+[Install]
+WantedBy=default.target

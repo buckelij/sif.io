@@ -1,0 +1,13 @@
+[Unit]
+Description=Socat SMTP
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/socat -d -d TCP-LISTEN:25,reuseaddr,forever,fork TCP:127.0.0.1:1025
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,10 @@
+[Unit]
+Description=sif.io smtp 
+
+[Service]
+ExecStart=/opt/sif.io/smtp/sif.io/main
+EnvironmentFile=/opt/sif.io/smtp/etc/env
+User=sifio
+
+[Install]
+WantedBy=multi-user.target
