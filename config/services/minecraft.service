@@ -1,0 +1,18 @@
+# ln -s /opt/sif.io/minecraft/etc/minecraft.service /etc/systemd/system/minecraft.service
+# systemctl daemon-reload
+# systemctl enable minecraft.service
+[Unit]
+Description=Minecraft Bedrock Server
+After=network.target local-fs.target
+
+[Service]
+Type=simple
+User=minecraft
+Group=minecraft
+WorkingDirectory=/opt/minecraft
+Environment=LD_LIBRARY_PATH=.
+ExecStart=/opt/minecraft/bedrock_server
+Restart=yes
+
+[Install]
+WantedBy=multi-user.target
