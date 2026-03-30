@@ -112,8 +112,8 @@ var ResumeHtml = `<!DOCTYPE HTML>
 		</ul>
 		<b>Skills</b>
 		<ul>
-			<li>Languages: Ruby, JavaScript, Go, Bash</li>
-			<li>Systems: AWS, Azure, HAProxy, Kubernetes, Linux, MySQL , Terraform, etc :)</li>
+			<li>Languages: Go, Ruby, JavaScript, Bash</li>
+			<li>Systems: Azure, HAProxy, Kubernetes, Linux, MySQL, Terraform, etc :)</li>
 		</ul>
 	</body>
 	</html>`
