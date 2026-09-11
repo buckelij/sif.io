@@ -39,7 +39,7 @@ directories:
 
 ```sh
 cd /opt/sif.io/github_buckelij_sif.io
-git fetch
+git pull
 
 go build -o /opt/sif.io/smtp/sif.io/main ./cmd/smtp
 sudo systemctl restart sifiosmtp.service
