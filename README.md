@@ -106,6 +106,106 @@ sudo systemctl enable --now minecraft.service
 sudo systemctl restart minecraft.service
 ```
 
+### Updating host services
+
+Run these commands on the Linux host described above, not from the Kubernetes
+deployment. They assume the services are already installed.
+
+#### Website and mail
+
+Pull the latest source, test and build both services, then restart them. The
+environment files under `/opt/sif.io/{smtp,www}/etc` are left unchanged:
+
+```sh
+(
+  set -eu
+  cd /opt/sif.io/github_buckelij_sif.io
+  git pull --ff-only
+  go test ./...
+  go build -o /opt/sif.io/smtp/sif.io/main ./cmd/smtp
+  go build -o /opt/sif.io/www/sif.io/main ./cmd/www
+  sudo systemctl restart sifiosmtp.service sifiowww.service
+  sudo systemctl --no-pager --full status sifiosmtp.service sifiowww.service
+)
+```
+
+#### Bluesky PDS
+
+Use the installed `pdsadmin` updater; do not remove `/pds`, which holds the
+database, stored blobs, and `pds.env`:
+
+```sh
+sudo pdsadmin update &&
+sudo docker logs --tail 50 pds
+```
+
+#### Minecraft Bedrock
+
+Run the following in **Bash**, with `curl`, `jq`, `unzip`, and `tar` installed.
+It automatically checks Minecraft's download API for the latest Linux server
+version and uses its download URL. Download and validate the archive before
+stopping the service, then back up the entire stopped installation outside
+`/opt/minecraft`.
+
+The extraction overwrites server binaries and bundled assets, but preserves
+`worlds/`, `config/`, `server.properties`, `allowlist.json`, `permissions.json`,
+and legacy `whitelist.json`. Files not supplied by the archive remain in place.
+Any other customizations to bundled files are retained in the full backup;
+reapply those deliberately rather than overwriting new server assets.
+
+```bash
+(
+  set -euo pipefail
+  BEDROCK_URL=$(
+    curl --http1.1 -fsSL --max-time 30 \
+      -A 'Mozilla/5.0' \
+      'https://net-secondary.web.minecraft-services.net/api/v1.0/download/links' |
+      jq -er '
+        [.result.links[]
+         | select(.downloadType == "serverBedrockLinux")
+         | .downloadUrl]
+        | if length == 1 then .[0]
+          else error("Expected exactly one Bedrock Linux download URL")
+          end
+      '
+  )
+  BEDROCK_VERSION=$(
+    printf '%s\n' "$BEDROCK_URL" |
+      jq -Rer '
+        capture("bedrock-server-(?<version>[0-9]+(?:\\.[0-9]+)+)\\.zip$")
+        | .version
+      '
+  )
+  printf 'Latest Bedrock Linux version: %s\n' "$BEDROCK_VERSION"
+  download_dir=$(mktemp -d)
+  trap 'rm -f "$download_dir/bedrock.zip"; rmdir "$download_dir"' EXIT
+  curl --http1.1 --fail --location --proto '=https' --proto-redir '=https' \
+    -A 'Mozilla/5.0' \
+    "$BEDROCK_URL" -o "$download_dir/bedrock.zip"
+  unzip -tq "$download_dir/bedrock.zip"
+
+  backup_dir=$(sudo mktemp -d /opt/minecraft-backup.XXXXXXXX)
+  printf 'Bedrock backup directory: %s\n' "$backup_dir"
+  sudo systemctl stop minecraft.service
+  sudo tar -C /opt/minecraft -czf "$backup_dir/server.tar.gz" .
+  sudo unzip -oq "$download_dir/bedrock.zip" -d /opt/minecraft \
+    -x 'worlds' 'worlds/*' 'config' 'config/*' \
+       'server.properties' 'allowlist.json' 'permissions.json' 'whitelist.json'
+  sudo chown -R minecraft:minecraft /opt/minecraft
+  sudo chmod u+x /opt/minecraft/bedrock_server
+  sudo systemctl start minecraft.service
+  sudo systemctl --no-pager --full status minecraft.service
+  sudo journalctl --unit minecraft.service --no-pager -n 50
+)
+```
+
+Check the startup logs and connect to the existing world before considering
+the update complete. Keep the printed backup directory until the update is
+confirmed. If backup or extraction fails, the command stops and leaves the
+service stopped; resolve the error before starting it. For rollback, stop the
+service and restore the **entire** saved installation, not just the old binary:
+a new server version may have changed the world format.
+
 ### Kubernetes
 
 The SMTP and website Dockerfiles build ARM64 images and run their test suites
