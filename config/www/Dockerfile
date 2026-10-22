@@ -1,4 +1,4 @@
-FROM golang:1-alpine
+FROM golang:1.27.3-alpine
 
 WORKDIR /usr/src/app
 ENV GOARCH=arm64
