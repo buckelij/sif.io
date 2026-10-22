@@ -179,7 +179,8 @@ reapply those deliberately rather than overwriting new server assets.
   printf 'Latest Bedrock Linux version: %s\n' "$BEDROCK_VERSION"
   download_dir=$(mktemp -d)
   trap 'rm -f "$download_dir/bedrock.zip"; rmdir "$download_dir"' EXIT
-  curl --fail --location --proto '=https' --proto-redir '=https' \
+  curl --http1.1 --fail --location --proto '=https' --proto-redir '=https' \
+    -A 'Mozilla/5.0' \
     "$BEDROCK_URL" -o "$download_dir/bedrock.zip"
   unzip -tq "$download_dir/bedrock.zip"
 
