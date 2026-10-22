@@ -141,11 +141,11 @@ sudo docker logs --tail 50 pds
 
 #### Minecraft Bedrock
 
-Copy the current **Linux** server ZIP link from the
-[official Bedrock server download page](https://www.minecraft.net/en-us/download/server/bedrock)
-and replace the `BEDROCK_URL` value below. This requires `curl`, `unzip`, and
-`tar`. Download and validate the archive before stopping the service, then
-back up the entire stopped installation outside `/opt/minecraft`.
+Run the following in **Bash**, with `curl`, `jq`, `unzip`, and `tar` installed.
+It automatically checks Minecraft's download API for the latest Linux server
+version and uses its download URL. Download and validate the archive before
+stopping the service, then back up the entire stopped installation outside
+`/opt/minecraft`.
 
 The extraction overwrites server binaries and bundled assets, but preserves
 `worlds/`, `config/`, `server.properties`, `allowlist.json`, `permissions.json`,
@@ -153,10 +153,30 @@ and legacy `whitelist.json`. Files not supplied by the archive remain in place.
 Any other customizations to bundled files are retained in the full backup;
 reapply those deliberately rather than overwriting new server assets.
 
-```sh
+```bash
 (
-  set -eu
-  BEDROCK_URL='PASTE_OFFICIAL_LINUX_DOWNLOAD_URL_HERE'
+  set -euo pipefail
+  BEDROCK_URL=$(
+    curl --http1.1 -fsSL --max-time 30 \
+      -A 'Mozilla/5.0' \
+      'https://net-secondary.web.minecraft-services.net/api/v1.0/download/links' |
+      jq -er '
+        [.result.links[]
+         | select(.downloadType == "serverBedrockLinux")
+         | .downloadUrl]
+        | if length == 1 then .[0]
+          else error("Expected exactly one Bedrock Linux download URL")
+          end
+      '
+  )
+  BEDROCK_VERSION=$(
+    printf '%s\n' "$BEDROCK_URL" |
+      jq -Rer '
+        capture("bedrock-server-(?<version>[0-9]+(?:\\.[0-9]+)+)\\.zip$")
+        | .version
+      '
+  )
+  printf 'Latest Bedrock Linux version: %s\n' "$BEDROCK_VERSION"
   download_dir=$(mktemp -d)
   trap 'rm -f "$download_dir/bedrock.zip"; rmdir "$download_dir"' EXIT
   curl --fail --location --proto '=https' --proto-redir '=https' \
